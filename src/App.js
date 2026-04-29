@@ -284,11 +284,11 @@ function Home({ t }) {
     formData.append('text', text ? text : " ");
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/predict', formData, {
+      // 🚨 යාවත්කාලීන කළ API ලින්ක් එක - 1 🚨
+      const response = await axios.post('https://malindu12-sinhala-meme-api.hf.space/predict', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      // 🚨 මෙන්න අලුතින් දැම්ම කෑල්ල: Backend එකේ Error එකක් ආවොත් අල්ලනවා
       if (response.data.status === "error") {
         alert("🚨 AI එකේ දෝෂයක්: " + response.data.message);
         setLoading(false);
@@ -397,7 +397,8 @@ function Dashboard({ t }) {
   const [dashboardData, setDashboardData] = useState(null);
 
   const fetchDashboardData = () => {
-    axios.get(`http://127.0.0.1:8000/dashboard-data?t=${new Date().getTime()}`)
+    // 🚨 යාවත්කාලීන කළ API ලින්ක් එක - 2 🚨
+    axios.get(`https://malindu12-sinhala-meme-api.hf.space/dashboard-data?t=${new Date().getTime()}`)
       .then(res => setDashboardData(res.data))
       .catch(err => alert("Error fetching dashboard data!"));
   };
@@ -408,7 +409,8 @@ function Dashboard({ t }) {
 
   const handleClearHistory = () => {
     if (window.confirm(t.confirmDelete)) {
-      axios.delete('http://127.0.0.1:8000/clear-history')
+      // 🚨 යාවත්කාලීන කළ API ලින්ක් එක - 3 🚨
+      axios.delete('https://malindu12-sinhala-meme-api.hf.space/clear-history')
         .then(() => {
           fetchDashboardData(); 
         })
