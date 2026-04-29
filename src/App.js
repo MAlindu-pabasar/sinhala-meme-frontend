@@ -4,9 +4,12 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // ==========================================
-// 🔗 API Configuration (.env සහ ලයිව් ලින්ක්)
+// 🔗 Smart API Configuration
 // ==========================================
-const API_BASE_URL = process.env.REACT_APP_API_URL || "https://malindu12-sinhala-meme-api.hf.space";
+// Automatically switches between Localhost (for development) and Hugging Face (for production)
+const API_BASE_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  ? "http://127.0.0.1:8000"
+  : "https://malindu12-sinhala-meme-api.hf.space";
 
 // ==========================================
 // 🌍 Translation Dictionary
@@ -85,7 +88,7 @@ const translations = {
 };
 
 // ==========================================
-// 🎨 Modern Premium CSS 
+// 🎨 Custom Premium CSS
 // ==========================================
 const customStyles = `
   body { 
@@ -158,20 +161,6 @@ const customStyles = `
     overflow-y: auto;
     border-radius: 10px;
   }
-  .table-scroll-container::-webkit-scrollbar {
-    width: 8px;
-  }
-  .table-scroll-container::-webkit-scrollbar-track {
-    background: #f1f1f1; 
-    border-radius: 10px;
-  }
-  .table-scroll-container::-webkit-scrollbar-thumb {
-    background: #c1c1c1; 
-    border-radius: 10px;
-  }
-  .table-scroll-container::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8; 
-  }
 `;
 
 // ==========================================
@@ -203,12 +192,12 @@ function Header({ lang, setLang, t }) {
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto fs-5 align-items-lg-center">
-            <li className="nav-item me-3 mb-2 mb-lg-0">
+            <li className="nav-item me-3">
               <Link className={`nav-link fw-semibold ${location.pathname === '/' ? 'active text-info' : ''}`} to="/">
                 {t.navHome}
               </Link>
             </li>
-            <li className="nav-item me-4 mb-2 mb-lg-0">
+            <li className="nav-item me-4">
               <Link className={`nav-link fw-semibold ${location.pathname === '/dashboard' ? 'active text-info' : ''}`} to="/dashboard">
                 {t.navDash}
               </Link>
@@ -226,20 +215,7 @@ function Header({ lang, setLang, t }) {
 }
 
 // ==========================================
-// 🦶 Footer Component
-// ==========================================
-function Footer() {
-  return (
-    <footer className="footer mt-auto py-4 text-dark text-center" style={{background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(5px)'}}>
-      <div className="container">
-        <small className="fw-semibold opacity-75">&copy; 2026 Sinhala Meme AI Team. All rights reserved. | Research Project</small>
-      </div>
-    </footer>
-  );
-}
-
-// ==========================================
-// 🏠 1. Home Page (Meme Checker)
+// 🏠 Home Page Component
 // ==========================================
 function Home({ t }) {
   const [image, setImage] = useState(null);
@@ -250,21 +226,7 @@ function Home({ t }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleImageChange = (e) => {
-    if(e.target.files && e.target.files.length > 0) processFile(e.target.files[0]);
-  };
-
-  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
-  
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) processFile(file);
-    else alert(t.needImageAlert);
-  };
-
+  // File handling logic
   const processFile = (file) => {
     setImage(file);
     if (file) {
@@ -276,6 +238,19 @@ function Home({ t }) {
     }
   };
 
+  const handleImageChange = (e) => {
+    if(e.target.files && e.target.files.length > 0) processFile(e.target.files[0]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) processFile(file);
+    else alert(t.needImageAlert);
+  };
+
+  // Submit form to API
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!image) { alert(t.needImageAlert); return; }
@@ -289,21 +264,19 @@ function Home({ t }) {
     formData.append('text', text ? text : " ");
 
     try {
-      // 🚨 යාවත්කාලීන කළ API ලින්ක් එක (.env හරහා) 🚨
+      // POST to Dynamic API URL
       const response = await axios.post(`${API_BASE_URL}/predict`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
       if (response.data.status === "error") {
-        alert("🚨 AI එකේ දෝෂයක්: " + response.data.message);
-        setLoading(false);
-        return;
+        alert("🚨 AI Error: " + response.data.message);
+      } else {
+        setResult(response.data);
       }
-      
-      setResult(response.data);
     } catch (error) {
-      console.error("Error:", error);
-      alert("API Error!");
+      console.error("API Connection Error:", error);
+      alert("Cannot connect to Backend API!");
     }
     setLoading(false);
   };
@@ -313,44 +286,38 @@ function Home({ t }) {
       <div className="row justify-content-center">
         <div className="col-lg-9">
           <div className="card meme-card p-4 p-md-5">
-            <div className="card-body">
+            <div className="card-body text-center">
+              <h1 className="fw-bolder mb-2 text-primary">{t.heroTitle}</h1>
+              <p className="text-secondary fs-5">{t.heroSub}</p>
               
-              <div className="text-center mb-5">
-                <h1 className="fw-bolder mb-2" style={{
-                  background: 'linear-gradient(45deg, #1e3c72, #2a5298)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>{t.heroTitle}</h1>
-                <p className="text-secondary fs-5">{t.heroSub}</p>
-              </div>
-              
-              <form onSubmit={handleSubmit} className="mb-4">
-                <div className="row g-4">
+              <form onSubmit={handleSubmit} className="mb-4 text-start">
+                <div className="row g-4 mt-3">
                   <div className="col-md-6">
-                    <label className="form-label fw-bold text-dark fs-5">{t.selectImg}</label>
+                    <label className="form-label fw-bold">{t.selectImg}</label>
                     <div 
-                      className={`card drop-zone p-3 text-center d-flex justify-content-center align-items-center ${isDragging ? 'drag-active' : ''}`} 
+                      className={`card drop-zone p-3 text-center ${isDragging ? 'drag-active' : ''}`} 
                       style={{ cursor: 'pointer', minHeight: '220px' }} 
                       onClick={() => document.getElementById('memeImage').click()}
-                      onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+                      onDragOver={(e) => {e.preventDefault(); setIsDragging(true);}}
+                      onDragLeave={(e) => {e.preventDefault(); setIsDragging(false);}}
+                      onDrop={handleDrop}
                     >
                       {imagePreview ? (
-                        <img src={imagePreview} alt="Preview" className="img-fluid rounded shadow-sm" style={{maxHeight: '190px', objectFit: 'contain'}} />
+                        <img src={imagePreview} alt="Preview" className="img-fluid rounded shadow-sm" style={{maxHeight: '190px'}} />
                       ) : (
                         <div className="py-4 text-primary opacity-75">
-                          <i className="fs-1 mb-2">📥</i><br/>
-                          <span className="fw-bold fs-5">{isDragging ? t.dropHere : t.dragDrop}</span><br/>
-                          <small className="text-muted">{t.orClick}</small>
+                          <i className="fs-1">📥</i><br/>
+                          <span className="fw-bold">{isDragging ? t.dropHere : t.dragDrop}</span>
                         </div>
                       )}
                     </div>
-                    <input type="file" id="memeImage" className="form-control d-none" accept="image/*" onChange={handleImageChange} />
+                    <input type="file" id="memeImage" className="d-none" accept="image/*" onChange={handleImageChange} />
                   </div>
                   
-                  <div className="col-md-6 d-flex flex-column">
-                    <label className="form-label fw-bold text-dark fs-5">{t.textLabel}</label>
+                  <div className="col-md-6">
+                    <label className="form-label fw-bold">{t.textLabel}</label>
                     <textarea 
-                      className="form-control flex-grow-1 p-4 text-area-custom fs-5" 
+                      className="form-control text-area-custom h-100" 
                       placeholder={t.textPlaceholder} 
                       value={text} 
                       onChange={(e) => setText(e.target.value)}
@@ -358,30 +325,21 @@ function Home({ t }) {
                   </div>
                 </div>
                 
-                <button type="submit" className="btn btn-gradient btn-lg w-100 mt-5 rounded-pill py-3 fs-4" disabled={loading}>
-                  {loading ? (
-                    <span><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> {t.analyzing}</span>
-                  ) : t.analyzeBtn}
+                <button type="submit" className="btn btn-gradient btn-lg w-100 mt-5 rounded-pill py-3" disabled={loading}>
+                  {loading ? t.analyzing : t.analyzeBtn}
                 </button>
               </form>
 
               {result && (
-                <div className={`alert mt-5 rounded-4 p-4 text-center border-0 shadow-sm ${result.prediction === 'HATEFUL' ? 'bg-danger text-white' : 'bg-success text-white'}`}>
-                  <h2 className="alert-heading fw-bolder mb-3">
-                    {result.prediction === 'HATEFUL' ? `🚨 ${t.hatefulResult.split(' ')[0]} HATEFUL` : `✅ NON-HATEFUL`}
-                  </h2>
-                  <p className="fs-4 mb-4 opacity-75">{result.prediction === 'HATEFUL' ? t.hatefulResult : t.nonHatefulResult}</p>
-                  
-                  <div className="d-inline-flex justify-content-center align-items-center bg-white text-dark px-4 py-2 rounded-pill shadow-sm mb-4">
-                    <span className="fw-semibold me-2">{t.confidence}</span>
-                    <span className="badge bg-dark fs-5 px-3 rounded-pill">{result.confidence}%</span>
+                <div className={`alert mt-5 rounded-4 p-4 ${result.prediction === 'HATEFUL' ? 'bg-danger text-white' : 'bg-success text-white'}`}>
+                  <h2 className="fw-bolder mb-2">{result.prediction}</h2>
+                  <p className="fs-5">{result.prediction === 'HATEFUL' ? t.hatefulResult : t.nonHatefulResult}</p>
+                  <div className="badge bg-dark fs-6 px-3 py-2 rounded-pill">
+                    {t.confidence} {result.confidence}%
                   </div>
-                  
-                  <hr className="border-white opacity-25 my-3" />
-                  
-                  <div className="d-flex flex-column align-items-center">
-                    <p className="mb-2 small opacity-75">{t.wrongPred}</p>
-                    <button className="btn btn-sm btn-light text-danger fw-bold rounded-pill px-3" onClick={() => setFeedbackSent(true)} disabled={feedbackSent}>
+                  <div className="mt-4">
+                    <small className="d-block mb-2">{t.wrongPred}</small>
+                    <button className="btn btn-sm btn-light text-danger fw-bold rounded-pill" onClick={() => setFeedbackSent(true)} disabled={feedbackSent}>
                       {feedbackSent ? t.reported : t.reportBtn}
                     </button>
                   </div>
@@ -396,16 +354,16 @@ function Home({ t }) {
 }
 
 // ==========================================
-// 📊 2. Admin Dashboard Page
+// 📊 Dashboard Component
 // ==========================================
 function Dashboard({ t }) {
   const [dashboardData, setDashboardData] = useState(null);
 
+  // Fetch metrics and history from the API
   const fetchDashboardData = () => {
-    // 🚨 යාවත්කාලීන කළ API ලින්ක් එක (.env හරහා) 🚨
     axios.get(`${API_BASE_URL}/dashboard-data?t=${new Date().getTime()}`)
       .then(res => setDashboardData(res.data))
-      .catch(err => alert("Error fetching dashboard data!"));
+      .catch(err => console.error("History fetch error:", err));
   };
 
   useEffect(() => {
@@ -414,116 +372,82 @@ function Dashboard({ t }) {
 
   const handleClearHistory = () => {
     if (window.confirm(t.confirmDelete)) {
-      // 🚨 යාවත්කාලීන කළ API ලින්ක් එක (.env හරහා) 🚨
       axios.delete(`${API_BASE_URL}/clear-history`)
-        .then(() => {
-          fetchDashboardData(); 
-        })
-        .catch(err => alert("Error clearing history!"));
+        .then(() => fetchDashboardData())
+        .catch(err => alert("Clear history failed!"));
     }
   };
 
   return (
-    <div className="container my-5 flex-shrink-0">
-      <div className="row align-items-center mb-5 bg-white p-4 rounded-4 shadow-sm" style={{background: 'rgba(255,255,255,0.8)'}}>
-        <div className="col">
-          <h1 className="text-primary fw-bolder mb-1">{t.dashTitle}</h1>
-          <p className="text-muted fs-5 mb-0">{t.dashSub}</p>
-        </div>
-        <div className="col-auto">
-           <Link to="/" className="btn btn-primary btn-lg rounded-pill shadow-sm fw-bold px-4">{t.backHome}</Link>
-        </div>
+    <div className="container my-5">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="text-primary fw-bolder">{t.dashTitle}</h1>
+        <Link to="/" className="btn btn-primary rounded-pill px-4">{t.backHome}</Link>
       </div>
 
       {dashboardData ? (
         <>
           <div className="row mb-5 text-center g-4">
             <div className="col-md-4">
-              <div className="card text-bg-primary h-100 meme-card shadow border-0" style={{background: 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)'}}>
-                <div className="card-body p-4 d-flex flex-column justify-content-center">
-                  <h5 className="card-title fs-5 mb-2 opacity-75 text-white">{t.totalChecked}</h5>
-                  <h2 className="display-3 fw-bolder text-white mb-0">{dashboardData.total_checked}</h2>
-                </div>
+              <div className="card meme-card bg-primary text-white p-4">
+                <h5>{t.totalChecked}</h5>
+                <h2 className="display-4 fw-bold">{dashboardData.total_checked}</h2>
               </div>
             </div>
             <div className="col-md-4">
-              <div className="card text-bg-danger h-100 meme-card shadow border-0" style={{background: 'linear-gradient(135deg, #f85032 0%, #e73827 100%)'}}>
-                <div className="card-body p-4 d-flex flex-column justify-content-center">
-                  <h5 className="card-title fs-5 mb-2 opacity-75 text-white">🚨 HATEFUL</h5>
-                  <h2 className="display-3 fw-bolder text-white mb-0">{dashboardData.hateful_total}</h2>
-                </div>
+              <div className="card meme-card bg-danger text-white p-4">
+                <h5>🚨 HATEFUL</h5>
+                <h2 className="display-4 fw-bold">{dashboardData.hateful_total}</h2>
               </div>
             </div>
             <div className="col-md-4">
-              <div className="card text-bg-success h-100 meme-card shadow border-0" style={{background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'}}>
-                <div className="card-body p-4 d-flex flex-column justify-content-center">
-                  <h5 className="card-title fs-5 mb-2 opacity-75 text-white">✅ NON-HATEFUL</h5>
-                  <h2 className="display-3 fw-bolder text-white mb-0">{dashboardData.non_hateful_total}</h2>
-                </div>
+              <div className="card meme-card bg-success text-white p-4">
+                <h5>✅ NON-HATEFUL</h5>
+                <h2 className="display-4 fw-bold">{dashboardData.non_hateful_total}</h2>
               </div>
             </div>
           </div>
 
-          <div className="card meme-card shadow p-4 border-0">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h3 className="fw-bold text-dark mb-0">{t.historyTitle}</h3>
-                <button className="btn btn-outline-danger rounded-pill fw-bold px-3 shadow-sm" onClick={handleClearHistory} disabled={dashboardData.total_checked === 0}>
-                  {t.clearHistoryBtn}
-                </button>
-              </div>
-
-              <div className="table-responsive table-scroll-container border border-light">
-                <table className="table table-hover align-middle admin-table fs-6 mb-0">
-                  <thead>
-                    <tr>
-                      <th className="py-3 px-4 border-0">ID</th>
-                      <th className="py-3 px-4 border-0">{t.colTime}</th>
-                      <th className="py-3 px-4 border-0">{t.colText}</th>
-                      <th className="py-3 px-4 border-0 text-center">{t.colResult}</th>
-                      <th className="py-3 px-4 border-0 text-center">{t.colConfidence}</th>
+          <div className="card meme-card shadow p-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h3 className="fw-bold">{t.historyTitle}</h3>
+              <button className="btn btn-outline-danger btn-sm rounded-pill" onClick={handleClearHistory}>{t.clearHistoryBtn}</button>
+            </div>
+            <div className="table-responsive table-scroll-container">
+              <table className="table table-hover align-middle">
+                <thead className="table-dark">
+                  <tr>
+                    <th>{t.colTime}</th>
+                    <th>{t.colText}</th>
+                    <th className="text-center">{t.colResult}</th>
+                    <th className="text-center">{t.colConfidence}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dashboardData.history.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.time}</td>
+                      <td>{item.text || t.noText}</td>
+                      <td className="text-center">
+                        <span className={`badge rounded-pill ${item.prediction === 'HATEFUL' ? 'bg-danger' : 'bg-success'}`}>
+                          {item.prediction}
+                        </span>
+                      </td>
+                      <td className="text-center fw-bold">{item.confidence}%</td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white">
-                    {dashboardData.history.length > 0 ? (
-                      dashboardData.history.map((item) => (
-                        <tr key={item.id} className="border-bottom">
-                          <td className="fw-bold text-center text-muted px-4">{item.id}</td>
-                          <td className="px-4 text-secondary">{item.time}</td>
-                          <td className="px-4">
-                            {item.text.trim() === "" ? <span className="text-danger small bg-danger bg-opacity-10 px-2 py-1 rounded">{t.noText}</span> : <span className="text-dark fw-medium">{item.text}</span>}
-                          </td>
-                          <td className="text-center px-4">
-                            <span className={`badge ${item.prediction === 'HATEFUL' ? 'bg-danger' : 'bg-success'} fs-6 rounded-pill px-3 py-2 shadow-sm`}>
-                              {item.prediction}
-                            </span>
-                          </td>
-                          <td className="fw-bolder text-center fs-5 text-dark px-4">{item.confidence}%</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="text-center py-5 text-muted fs-5">No history available.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </>
-      ) : (
-        <div className="text-center mt-5 py-5">
-            <div className="spinner-border text-primary" style={{width: '3rem', height: '3rem'}} role="status"></div>
-            <h4 className="mt-4 text-muted fw-bold">{t.loading}</h4>
-        </div>
-      )}
+      ) : <h4 className="text-center mt-5">{t.loading}</h4>}
     </div>
   );
 }
 
 // ==========================================
-// 🚀 Main App Component (Routing & Language State)
+// 🚀 App Root
 // ==========================================
 function App() {
   const [lang, setLang] = useState('en'); 
@@ -532,7 +456,7 @@ function App() {
   return (
     <Router>
       <style>{customStyles}</style>
-      <div className="d-flex flex-column h-100 min-vh-100">
+      <div className="d-flex flex-column min-vh-100">
         <Header lang={lang} setLang={setLang} t={t} /> 
         <main className="flex-grow-1">
           <Routes>
@@ -540,7 +464,9 @@ function App() {
             <Route path="/dashboard" element={<Dashboard t={t} />} />
           </Routes>
         </main>
-        <Footer /> 
+        <footer className="py-4 text-center bg-light mt-auto">
+          <small>&copy; 2026 Sinhala Meme AI Team</small>
+        </footer>
       </div>
     </Router>
   );
