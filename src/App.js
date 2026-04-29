@@ -4,6 +4,11 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // ==========================================
+// 🔗 API Configuration (.env සහ ලයිව් ලින්ක්)
+// ==========================================
+const API_BASE_URL = process.env.REACT_APP_API_URL || "https://malindu12-sinhala-meme-api.hf.space";
+
+// ==========================================
 // 🌍 Translation Dictionary
 // ==========================================
 const translations = {
@@ -284,8 +289,8 @@ function Home({ t }) {
     formData.append('text', text ? text : " ");
 
     try {
-      // 🚨 යාවත්කාලීන කළ API ලින්ක් එක - 1 🚨
-      const response = await axios.post('https://malindu12-sinhala-meme-api.hf.space/predict', formData, {
+      // 🚨 යාවත්කාලීන කළ API ලින්ක් එක (.env හරහා) 🚨
+      const response = await axios.post(`${API_BASE_URL}/predict`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
@@ -397,8 +402,8 @@ function Dashboard({ t }) {
   const [dashboardData, setDashboardData] = useState(null);
 
   const fetchDashboardData = () => {
-    // 🚨 යාවත්කාලීන කළ API ලින්ක් එක - 2 🚨
-    axios.get(`https://malindu12-sinhala-meme-api.hf.space/dashboard-data?t=${new Date().getTime()}`)
+    // 🚨 යාවත්කාලීන කළ API ලින්ක් එක (.env හරහා) 🚨
+    axios.get(`${API_BASE_URL}/dashboard-data?t=${new Date().getTime()}`)
       .then(res => setDashboardData(res.data))
       .catch(err => alert("Error fetching dashboard data!"));
   };
@@ -409,8 +414,8 @@ function Dashboard({ t }) {
 
   const handleClearHistory = () => {
     if (window.confirm(t.confirmDelete)) {
-      // 🚨 යාවත්කාලීන කළ API ලින්ක් එක - 3 🚨
-      axios.delete('https://malindu12-sinhala-meme-api.hf.space/clear-history')
+      // 🚨 යාවත්කාලීන කළ API ලින්ක් එක (.env හරහා) 🚨
+      axios.delete(`${API_BASE_URL}/clear-history`)
         .then(() => {
           fetchDashboardData(); 
         })
