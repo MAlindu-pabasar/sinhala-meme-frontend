@@ -1,284 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-
-// Import Bootstrap CSS and JS for responsiveness and interactive components
-import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
-// ==========================================
-// 🔗 Smart API Configuration
-// ==========================================
-// Automatically switches between Localhost and Hugging Face based on the environment
 const API_BASE_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
   ? "http://127.0.0.1:8000"
   : "https://malindu12-sinhala-meme-api.hf.space";
 
-// ==========================================
-// 🌍 Translation Dictionary (EN & SI)
-// ==========================================
 const translations = {
   si: {
-    navHome: "🏠 මුල් පිටුව",
-    navDash: "📊 Dashboard",
-    langSwitch: "English",
-    heroTitle: "සිංහල මීම් පිරික්සුම",
-    heroSub: "ඔබේ මීම් එක පහතින් අප්ලෝඩ් කර, එය ද්වේශසහගත ද නැද්ද යන්න AI හරහා දැනගන්න.",
-    selectImg: "📸 මීම් පින්තූරය තෝරන්න:",
-    dropHere: "මෙතන අතාරින්න...",
-    dragDrop: "පින්තූරය මෙතනට අදින්න (Drag & Drop)",
-    orClick: "හෝ Click කර තෝරන්න",
-    textLabel: "✍️ මීම් එකේ අකුරු පේළිය (විකල්ප):",
-    textPlaceholder: "ඔබට අවශ්‍ය නම් පමණක් මෙහි ටයිප් කරන්න... නැතහොත් AI විසින් පින්තූරයෙන් අකුරු කියවනු ඇත.",
-    analyzeBtn: "🚀 ප්‍රතිඵලය බලන්න",
-    analyzing: "⏳ AI එක කියවමින් පවතී...",
-    hatefulResult: "මෙය ද්වේශසහගත/නරක මීම් එකකි.",
-    nonHatefulResult: "මෙය සාමාන්‍ය මීම් එකකි.",
-    confidence: "විශ්වාසදායකත්වය (Confidence Score):",
-    wrongPred: "මේ අනාවැකිය වැරදිද?",
-    reportBtn: "🚩 මෙය වැරදියි (Report)",
-    reported: "✅ ප්‍රතිචාරය ලැබුණා",
-    needImageAlert: "කරුණාකර මීම් පින්තූරයක් ලබාදෙන්න!",
-    dashTitle: "📊 Admin Dashboard",
-    dashSub: "පද්ධතිය භාවිතා කිරීමේ සංඛ්‍යාලේඛන සහ මෑත ඉතිහාසය.",
-    backHome: "⬅️ ආපසු මුල් පිටුවට",
-    totalChecked: "පරීක්ෂා කළ මුළු ගණන",
-    historyTitle: "මෑතකදී පරීක්ෂා කළ මීම්ස් ඉතිහාසය",
-    colTime: "වෙලාව (Time)",
-    colText: "භාවිතා කළ අකුරු",
-    colResult: "ප්‍රතිඵලය",
-    colConfidence: "විශ්වාසය",
-    noText: "[අකුරු නොමැත / OCR අසමත්]",
-    loading: "⏳ දත්ත ලබා ගනිමින් පවතී...",
-    clearHistoryBtn: "🗑️ ඉතිහාසය මකන්න",
-    confirmDelete: "ඔබට විශ්වාසද සියලුම දත්ත මකා දැමිය යුතුයි කියා?"
+    navHome: "🏠 මුල් පිටුව", navDash: "📊 Dashboard", langSwitch: "English",
+    heroTitle: "සිංහල මීම් පිරික්සුම", selectImg: "📸 මීම් පින්තූරය:",
+    dragDrop: "පින්තූරය මෙතනට අදින්න (Drag & Drop)", analyzeBtn: "🚀 පරීක්ෂා කරන්න",
+    hatefulResult: "ද්වේශසහගත මීම් එකකි", nonHatefulResult: "සාමාන්‍ය මීම් එකකි",
+    reportBtn: "🚩 Report", exportBtn: "📥 දත්ත බාගත කරන්න (CSV)",
+    searchPlaceholder: "අකුරු වලින් සොයන්න...", filterAll: "සියල්ල",
   },
   en: {
-    navHome: "🏠 Home",
-    navDash: "📊 Dashboard",
-    langSwitch: "සිංහල",
-    heroTitle: "Sinhala Meme Checker",
-    heroSub: "Upload your meme below and let AI determine if it contains hateful content.",
-    selectImg: "📸 Select Meme Image:",
-    dropHere: "Drop it here...",
-    dragDrop: "Drag & Drop image here",
-    orClick: "or Click to browse",
-    textLabel: "✍️ Meme Text (Optional):",
-    textPlaceholder: "Type text here if needed... otherwise AI will extract it via OCR.",
-    analyzeBtn: "🚀 Analyze Meme",
-    analyzing: "⏳ AI is analyzing...",
-    hatefulResult: "This is a hateful/offensive meme.",
-    nonHatefulResult: "This is a normal/safe meme.",
-    confidence: "Confidence Score:",
-    wrongPred: "Is this prediction incorrect?",
-    reportBtn: "🚩 Report as wrong",
-    reported: "✅ Feedback recorded",
-    needImageAlert: "Please provide a meme image to proceed!",
-    dashTitle: "📊 Admin Dashboard",
-    dashSub: "System usage statistics and recent prediction history.",
-    backHome: "⬅️ Back to Home",
-    totalChecked: "Total Checked Memes",
-    historyTitle: "Recent Meme Prediction History",
-    colTime: "Timestamp",
-    colText: "Extracted/Used Text",
-    colResult: "Prediction",
-    colConfidence: "Confidence",
-    noText: "[No text found / OCR failed]",
-    loading: "⏳ Fetching data...",
-    clearHistoryBtn: "🗑️ Clear History",
-    confirmDelete: "Are you sure you want to delete all history?"
+    navHome: "🏠 Home", navDash: "📊 Dashboard", langSwitch: "සිංහල",
+    heroTitle: "Sinhala Meme Checker", selectImg: "📸 Select Meme:",
+    dragDrop: "Drag & Drop image here", analyzeBtn: "🚀 Analyze Meme",
+    hatefulResult: "Hateful Content Detected", nonHatefulResult: "Safe / Normal Meme",
+    reportBtn: "🚩 Report Wrong", exportBtn: "📥 Export to CSV",
+    searchPlaceholder: "Search by text...", filterAll: "All",
   }
 };
 
-// ==========================================
-// 🎨 Custom Premium CSS
-// ==========================================
 const customStyles = `
-  body { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
-  .meme-card { border-radius: 24px; border: none; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 20px 40px rgba(0,0,0,0.08)!important; transition: all 0.3s ease; }
-  .drop-zone { background-color: #f8fbff; border: 2px dashed #a1c4fd; border-radius: 20px; transition: all 0.3s ease; }
-  .text-area-custom { border-radius: 20px; border: 1px solid #e0e0e0; resize: none; transition: all 0.3s ease; }
-  .btn-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-weight: 600; box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3); transition: all 0.3s ease; }
-  .navbar-custom { background: rgba(33, 37, 41, 0.95) !important; backdrop-filter: blur(10px); }
-  .table-scroll-container { max-height: 400px; overflow-y: auto; border-radius: 10px; }
+  body { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; }
+  .meme-card { border-radius: 20px; border: none; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+  .drop-zone { border: 2px dashed #007bff; border-radius: 15px; cursor: pointer; transition: 0.3s; }
+  .drop-zone.active { background: #e7f1ff; transform: scale(1.02); }
+  .table-container { max-height: 500px; overflow-y: auto; }
 `;
 
-// ==========================================
-// 🏢 Header Component
-// ==========================================
-function Header({ lang, setLang, t }) {
-  const location = useLocation();
-  const toggleLanguage = () => setLang(lang === 'si' ? 'en' : 'si');
-
-  return (
-    <nav className="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm sticky-top">
-      <div className="container">
-        <Link className="navbar-brand d-flex align-items-center" to="/">
-          <span className="fs-2 me-2">🤖</span>
-          <div>
-            <span className="fw-bold fs-4">Sinhala Meme AI</span><br/>
-            <small className="text-white-50" style={{fontSize: '0.7rem'}}>Research Prototype</small>
-          </div>
-        </Link>
-        
-        {/* Bootstrap Hamburger Menu Toggle */}
-        <button className="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span className="navbar-toggler-icon"></span>
-        </button>
-
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav ms-auto align-items-lg-center">
-            <li className="nav-item">
-              <Link className={`nav-link fw-semibold ${location.pathname === '/' ? 'active text-info' : ''}`} to="/">{t.navHome}</Link>
-            </li>
-            <li className="nav-item">
-              <Link className={`nav-link fw-semibold ${location.pathname === '/dashboard' ? 'active text-info' : ''}`} to="/dashboard">{t.navDash}</Link>
-            </li>
-            <li className="nav-item ms-lg-3 mt-2 mt-lg-0">
-              <button className="btn btn-light btn-sm rounded-pill px-4 fw-bold text-primary" onClick={toggleLanguage}>
-                🌍 {t.langSwitch}
-              </button>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
-// ==========================================
-// 🏠 Home Component (Meme Prediction)
-// ==========================================
-function Home({ t }) {
-  const [image, setImage] = useState(null);
-  const [text, setText] = useState('');
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
-
-  const processFile = (file) => {
-    setImage(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!image) { alert(t.needImageAlert); return; }
-    setLoading(true);
-    setResult(null);
-
-    const formData = new FormData();
-    formData.append('file', image);
-    formData.append('text', text || " ");
-
-    try {
-      const response = await axios.post(`${API_BASE_URL}/predict`, formData);
-      setResult(response.data);
-    } catch (error) {
-      alert("API Error! Please check if backend is running.");
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div className="container my-5">
-      <div className="row justify-content-center">
-        <div className="col-lg-8">
-          <div className="card meme-card p-4">
-            <div className="card-body text-center">
-              <h1 className="fw-bold text-primary">{t.heroTitle}</h1>
-              <p className="text-muted mb-4">{t.heroSub}</p>
-              
-              <form onSubmit={handleSubmit} className="text-start">
-                <div className="row g-4">
-                  <div className="col-md-6">
-                    <label className="form-label fw-bold">{t.selectImg}</label>
-                    <div className="card drop-zone p-3 text-center" style={{cursor: 'pointer'}} onClick={() => document.getElementById('fileInput').click()}>
-                      {imagePreview ? <img src={imagePreview} alt="Preview" className="img-fluid rounded" style={{maxHeight: '180px'}} /> : <div className="py-5">📥 Click to Upload</div>}
-                    </div>
-                    <input type="file" id="fileInput" className="d-none" onChange={(e) => processFile(e.target.files[0])} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label fw-bold">{t.textLabel}</label>
-                    <textarea className="form-control text-area-custom h-100" placeholder={t.textPlaceholder} value={text} onChange={(e) => setText(e.target.value)} />
-                  </div>
-                </div>
-                <button type="submit" className="btn btn-gradient btn-lg w-100 mt-5 rounded-pill" disabled={loading}>
-                  {loading ? t.analyzing : t.analyzeBtn}
-                </button>
-              </form>
-
-              {result && (
-                <div className={`alert mt-5 rounded-4 ${result.prediction === 'HATEFUL' ? 'bg-danger text-white' : 'bg-success text-white'}`}>
-                  <h2 className="fw-bold">{result.prediction}</h2>
-                  <p>{result.prediction === 'HATEFUL' ? t.hatefulResult : t.nonHatefulResult}</p>
-                  <span className="badge bg-dark px-3 py-2 rounded-pill">{t.confidence} {result.confidence}%</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ==========================================
-// 📊 Dashboard Component (Admin Stats)
-// ==========================================
-function Dashboard({ t }) {
-  const [data, setData] = useState(null);
-
-  const fetchData = () => {
-    axios.get(`${API_BASE_URL}/dashboard-data?t=${new Date().getTime()}`)
-      .then(res => setData(res.data))
-      .catch(err => console.error(err));
-  };
-
-  useEffect(() => { fetchData(); }, []);
-
-  return (
-    <div className="container my-5">
-      <h1 className="fw-bold text-primary mb-4">{t.dashTitle}</h1>
-      {data ? (
-        <>
-          <div className="row g-4 mb-5 text-white">
-            <div className="col-md-4"><div className="card meme-card bg-primary p-4"><h5>Total</h5><h2>{data.total_checked}</h2></div></div>
-            <div className="col-md-4"><div className="card meme-card bg-danger p-4"><h5>Hateful</h5><h2>{data.hateful_total}</h2></div></div>
-            <div className="col-md-4"><div className="card meme-card bg-success p-4"><h5>Safe</h5><h2>{data.non_hateful_total}</h2></div></div>
-          </div>
-          <div className="card meme-card p-4 shadow">
-            <h3 className="fw-bold mb-4">{t.historyTitle}</h3>
-            <div className="table-responsive table-scroll-container">
-              <table className="table table-hover">
-                <thead className="table-dark">
-                  <tr><th>Time</th><th>Text</th><th className="text-center">Result</th></tr>
-                </thead>
-                <tbody>
-                  {data.history.map(item => (
-                    <tr key={item.id}>
-                      <td>{item.time}</td>
-                      <td>{item.text || t.noText}</td>
-                      <td className="text-center"><span className={`badge rounded-pill ${item.prediction === 'HATEFUL' ? 'bg-danger' : 'bg-success'}`}>{item.prediction}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      ) : <h4>{t.loading}</h4>}
-    </div>
-  );
-}
-
-// ==========================================
-// 🚀 App Component
-// ==========================================
 function App() {
   const [lang, setLang] = useState('en');
   const t = translations[lang];
@@ -286,19 +42,158 @@ function App() {
   return (
     <Router>
       <style>{customStyles}</style>
-      <div className="d-flex flex-column min-vh-100">
-        <Header lang={lang} setLang={setLang} t={t} />
-        <main className="flex-grow-1">
-          <Routes>
-            <Route path="/" element={<Home t={t} />} />
-            <Route path="/dashboard" element={<Dashboard t={t} />} />
-          </Routes>
-        </main>
-        <footer className="py-4 text-center bg-light mt-auto">
-          <small>&copy; 2026 Sinhala Meme AI Team | Research Project</small>
-        </footer>
-      </div>
+      <Header lang={lang} setLang={setLang} t={t} />
+      <Routes>
+        <Route path="/" element={<Home t={t} />} />
+        <Route path="/dashboard" element={<Dashboard t={t} />} />
+      </Routes>
     </Router>
+  );
+}
+
+function Header({ lang, setLang, t }) {
+  return (
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow mb-4">
+      <div className="container">
+        <Link className="navbar-brand fw-bold" to="/">🤖 Sinhala Meme AI</Link>
+        <div className="collapse navbar-collapse">
+          <ul className="navbar-nav ms-auto">
+            <li className="nav-item"><Link className="nav-link" to="/">{t.navHome}</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/dashboard">{t.navDash}</Link></li>
+            <li className="nav-item ms-3"><button className="btn btn-primary btn-sm rounded-pill" onClick={() => setLang(lang === 'si' ? 'en' : 'si')}>{t.langSwitch}</button></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function Home({ t }) {
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const onFileSelect = (file) => {
+    if (file && file.type.startsWith('image/')) {
+      setImage(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handlePredict = async () => {
+    if (!image) return alert("Select an image first!");
+    setLoading(true);
+    const fd = new FormData(); fd.append('file', image); fd.append('text', "");
+    try {
+      const res = await axios.post(`${API_BASE_URL}/predict`, fd);
+      setResult(res.data);
+    } catch (e) { alert("Error!"); }
+    setLoading(false);
+  };
+
+  return (
+    <div className="container py-5">
+      <div className="card meme-card p-5 mx-auto" style={{maxWidth: '800px'}}>
+        <h1 className="text-center fw-bold text-primary mb-4">{t.heroTitle}</h1>
+        <div 
+          className={`drop-zone p-5 text-center mb-4 ${isDragging ? 'active' : ''}`}
+          onDragOver={(e) => {e.preventDefault(); setIsDragging(true);}}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => {e.preventDefault(); setIsDragging(false); onFileSelect(e.dataTransfer.files[0]);}}
+          onClick={() => document.getElementById('inp').click()}
+        >
+          {preview ? <img src={preview} className="img-fluid rounded" style={{maxHeight: '250px'}} alt="preview" /> : <p className="m-0 text-muted">{t.dragDrop}</p>}
+          <input type="file" id="inp" hidden onChange={(e) => onFileSelect(e.target.files[0])} />
+        </div>
+        <button className="btn btn-primary btn-lg w-100 rounded-pill" onClick={handlePredict} disabled={loading}>{loading ? "Analyzing..." : t.analyzeBtn}</button>
+        
+        {result && (
+          <div className={`alert mt-4 rounded-4 text-center ${result.prediction === 'HATEFUL' ? 'alert-danger' : 'alert-success'}`}>
+            <h3>{result.prediction === 'HATEFUL' ? t.hatefulResult : t.nonHatefulResult}</h3>
+            <p className="fw-bold">Confidence: {result.confidence}%</p>
+            <button className="btn btn-outline-dark btn-sm rounded-pill mt-2">{t.reportBtn}</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ t }) {
+  const [data, setData] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("ALL");
+
+  const fetchHistory = () => axios.get(`${API_BASE_URL}/dashboard-data`).then(r => setData(r.data));
+  useEffect(() => { fetchHistory(); }, []);
+
+  const deleteOne = (id) => {
+    if(window.confirm("Delete this?")) axios.delete(`${API_BASE_URL}/delete-history/${id}`).then(() => fetchHistory());
+  };
+
+  const exportCSV = () => {
+    let csvContent = "data:text/csv;charset=utf-8,ID,Time,Text,Result,Confidence\n";
+    data.history.forEach(r => csvContent += `${r.id},${r.time},"${r.text}",${r.prediction},${r.confidence}%\n`);
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a"); link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "meme_history.csv"); document.body.appendChild(link);
+    link.click();
+  };
+
+  const filteredHistory = data?.history.filter(item => 
+    (filter === "ALL" || item.prediction === filter) &&
+    (item.text.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  return (
+    <div className="container">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="fw-bold">{t.navDash}</h2>
+        <button className="btn btn-success rounded-pill fw-bold" onClick={exportCSV}>{t.exportBtn}</button>
+      </div>
+      
+      {data && (
+        <>
+          <div className="row g-3 mb-4">
+            <div className="col-md-4"><div className="card p-3 bg-primary text-white text-center rounded-4"><h5>Total</h5><h3>{data.total_checked}</h3></div></div>
+            <div className="col-md-4"><div className="card p-3 bg-danger text-white text-center rounded-4"><h5>Hateful</h5><h3>{data.hateful_total}</h3></div></div>
+            <div className="col-md-4"><div className="card p-3 bg-success text-white text-center rounded-4"><h5>Safe</h5><h3>{data.non_hateful_total}</h3></div></div>
+          </div>
+
+          <div className="card meme-card p-4">
+            <div className="row mb-3">
+              <div className="col-md-8"><input type="text" className="form-control rounded-pill" placeholder={t.searchPlaceholder} onChange={(e) => setSearch(e.target.value)} /></div>
+              <div className="col-md-4">
+                <select className="form-select rounded-pill" onChange={(e) => setFilter(e.target.value)}>
+                  <option value="ALL">{t.filterAll}</option>
+                  <option value="HATEFUL">Hateful</option>
+                  <option value="NON-HATEFUL">Safe</option>
+                </select>
+              </div>
+            </div>
+            <div className="table-responsive table-container">
+              <table className="table table-hover">
+                <thead className="table-dark sticky-top">
+                  <tr><th>Time</th><th>Text</th><th>Result</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                  {filteredHistory?.map(item => (
+                    <tr key={item.id}>
+                      <td><small>{item.time}</small></td>
+                      <td>{item.text || "No text"}</td>
+                      <td><span className={`badge rounded-pill ${item.prediction === 'HATEFUL' ? 'bg-danger' : 'bg-success'}`}>{item.prediction}</span></td>
+                      <td><button className="btn btn-sm btn-outline-danger border-0" onClick={() => deleteOne(item.id)}>🗑️</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
