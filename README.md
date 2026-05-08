@@ -15,3 +15,14 @@ This repository contains the **React.js** frontend application for the Sinhala M
    ```bash
    git clone [https://github.com/MAlindu-pabasar/sinhala-meme-frontend.git](https://github.com/MAlindu-pabasar/sinhala-meme-frontend.git)
    cd sinhala-meme-frontend
+
+2.Install dependencies:
+Bash
+npm install
+
+3.Start the development server:
+
+Bash
+npm start
+
+The application will launch in your browser at http://localhost:3000
