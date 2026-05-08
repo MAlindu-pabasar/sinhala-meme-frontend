@@ -2,7 +2,7 @@
 
 This repository contains the **React.js** frontend application for the Sinhala Meme Hate Speech Detection System. It provides an intuitive user interface for users to upload memes and view AI-generated classifications.
 
-🔗 **Backend Repository:** [[මෙතනට ඔයාගේ Backend Repo එකේ ලින්ක් එක දාන්න](https://github.com/MAlindu-pabasar/sinhala-meme-backend.git)]
+🔗 **Backend Repository:** [https://github.com/MAlindu-pabasar/sinhala-meme-backend.git]
 
 ## 🛠️ Technology Stack
 * React.js
